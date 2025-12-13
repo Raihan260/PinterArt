@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom' // Tambah useNavigate
 import { ArrowLeft, Settings, Share2, Lock, BarChart3, LogOut } from 'lucide-react' // Tambah icon LogOut
 import { useArt } from '../context/ArtContext'
@@ -8,12 +8,25 @@ export default function PinterArtProfile() {
   const { pins } = useArt()
   
   // Ambil user dan fungsi logout dari AuthContext
-  const { user, logout } = useAuth() 
+    const { user, logout, updateProfile } = useAuth ? useAuth() : { user: null, logout: () => {}, updateProfile: undefined }
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState('created')
+    const [isEditing, setIsEditing] = useState(false)
+    const [profileDraft, setProfileDraft] = useState({
+        username: user?.username || 'Raihan Artist',
+        bio: 'Digital Artist yang suka menggambar kucing dan suasana Cyberpunk.\nBerlangganan untuk melihat proses kreatifku! 🎨✨',
+        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
+    })
 
-  const createdPins = pins.filter(pin => pin.artist === 'Saya (Artist)' || pin.artist === 'Saya Sendiri')
+    // Guard: redirect jika belum login
+    useEffect(() => {
+        if (!user) {
+            navigate('/auth', { replace: true })
+        }
+    }, [user, navigate])
+
+    const createdPins = pins.filter(pin => pin.artist === 'Saya (Artist)' || pin.artist === 'Saya Sendiri')
   const savedPins = pins.filter(pin => pin.isSaved)
   const displayPins = activeTab === 'created' ? createdPins : savedPins
 
@@ -24,6 +37,36 @@ export default function PinterArtProfile() {
         navigate('/') // 2. Lempar ke halaman Login
     }
   }
+
+    const handleStartEdit = () => {
+        setProfileDraft({
+            username: user?.username || profileDraft.username,
+            bio: user?.bio || profileDraft.bio,
+            avatarUrl: user?.avatarUrl || profileDraft.avatarUrl
+        })
+        setIsEditing(true)
+    }
+
+    const handleSaveProfile = () => {
+        const data = { 
+            username: profileDraft.username?.trim() || 'Artist',
+            bio: profileDraft.bio?.trim() || '',
+            avatarUrl: profileDraft.avatarUrl?.trim() || ''
+        }
+        if (typeof updateProfile === 'function') {
+            updateProfile(data)
+        }
+        setIsEditing(false)
+    }
+
+    const handleCancelEdit = () => {
+        setIsEditing(false)
+        setProfileDraft({
+            username: user?.username || 'Raihan Artist',
+            bio: user?.bio || 'Digital Artist yang suka menggambar kucing dan suasana Cyberpunk.\nBerlangganan untuk melihat proses kreatifku! 🎨✨',
+            avatarUrl: user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
+        })
+    }
 
   return (
     <div className="min-h-screen bg-white text-gray-900 pb-20">
@@ -44,17 +87,49 @@ export default function PinterArtProfile() {
       {/* Info Profil */}
       <div className="flex flex-col items-center pt-8 pb-8 px-4 text-center">
         <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-4 border-2 border-white shadow-sm">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Profile" className="w-full h-full object-cover" />
+            <img src={isEditing ? profileDraft.avatarUrl : (user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix')} alt="Profile" className="w-full h-full object-cover" />
         </div>
         
         {/* Tampilkan Nama User Asli dari Login (Jika ada) */}
-        <h1 className="text-3xl font-bold mb-1">{user?.username || 'Raihan Artist'}</h1>
-        <p className="text-gray-500 text-sm mb-4">@{user?.username?.toLowerCase().replace(/\s/g, '_') || 'raihan_art'} • 0 Pengikut • 0 Mengikuti</p>
-        
-        <p className="text-gray-900 max-w-md text-sm leading-relaxed mb-6">
-            Digital Artist yang suka menggambar kucing dan suasana Cyberpunk. 
-            Berlangganan untuk melihat proses kreatifku! 🎨✨
-        </p>
+                {!isEditing ? (
+                    <>
+                        <h1 className="text-3xl font-bold mb-1">{user?.username || 'Raihan Artist'}</h1>
+                        <p className="text-gray-500 text-sm mb-4">@{(user?.username || 'raihan_art').toLowerCase().replace(/\s/g, '_')} • 0 Pengikut • 0 Mengikuti</p>
+                        <p className="text-gray-900 max-w-md text-sm leading-relaxed mb-6 whitespace-pre-wrap">
+                            {user?.bio || 'Digital Artist yang suka menggambar kucing dan suasana Cyberpunk.\nBerlangganan untuk melihat proses kreatifku! 🎨✨'}
+                        </p>
+                    </>
+                ) : (
+                    <div className="w-full max-w-md text-left space-y-3 mb-6">
+                        <label className="block">
+                            <span className="text-xs text-gray-500">Nama Pengguna</span>
+                            <input 
+                                type="text" 
+                                value={profileDraft.username}
+                                onChange={(e) => setProfileDraft((p) => ({ ...p, username: e.target.value }))}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
+                            />
+                        </label>
+                        <label className="block">
+                            <span className="text-xs text-gray-500">Bio</span>
+                            <textarea
+                                rows={4}
+                                value={profileDraft.bio}
+                                onChange={(e) => setProfileDraft((p) => ({ ...p, bio: e.target.value }))}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
+                            />
+                        </label>
+                        <label className="block">
+                            <span className="text-xs text-gray-500">Avatar URL</span>
+                            <input 
+                                type="url" 
+                                value={profileDraft.avatarUrl}
+                                onChange={(e) => setProfileDraft((p) => ({ ...p, avatarUrl: e.target.value }))}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
+                            />
+                        </label>
+                    </div>
+                )}
         
         <div className="flex flex-wrap justify-center gap-2">
             <Link to="/dashboard" className="bg-black text-white px-5 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition flex items-center gap-2 shadow-sm">
@@ -62,7 +137,14 @@ export default function PinterArtProfile() {
                 Creator Studio
             </Link>
             
-            <button className="bg-gray-100 px-5 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-200 transition">Edit Profil</button>
+                        {!isEditing ? (
+                            <button onClick={handleStartEdit} className="bg-gray-100 px-5 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-200 transition">Edit Profil</button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <button onClick={handleSaveProfile} className="bg-black text-white px-5 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition">Simpan</button>
+                                <button onClick={handleCancelEdit} className="bg-gray-100 px-5 py-2.5 rounded-full font-semibold text-sm hover:bg-gray-200 transition">Batal</button>
+                            </div>
+                        )}
             
             {/* Tombol Logout Utama */}
             <button 
