@@ -1,7 +1,18 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { ArrowLeft, DollarSign, Users, TrendingUp, BarChart3, Star } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function PinterArtDashboard() {
+    const { user } = useAuth()
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/auth', { replace: true, state: { from: location.pathname } })
+        }
+    }, [user, navigate, location])
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       

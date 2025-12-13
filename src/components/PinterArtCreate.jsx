@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ImagePlus, X, Lock, Unlock } from 'lucide-react' // Ganti icon Dollar jadi Lock
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useArt } from '../context/ArtContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function PinterArtCreate() {
   const [selectedImage, setSelectedImage] = useState(null)
@@ -14,6 +15,14 @@ export default function PinterArtCreate() {
 
   const { addPin } = useArt()
   const navigate = useNavigate()
+    const { user } = useAuth()
+    const location = useLocation()
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/auth', { replace: true, state: { from: location.pathname } })
+        }
+    }, [user, navigate, location])
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0]

@@ -4,12 +4,14 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom' // <--- 1. Import ini
+import { useLocation, useNavigate } from 'react-router-dom' // <--- 1. Import ini
 
 export default function PinterArtAuth() {
   const [mode, setMode] = useState('login')
   const { signIn, signUp, loading, error, user } = useAuth()
   const navigate = useNavigate() // <--- 2. Panggil ini
+  const location = useLocation()
+  const fromPath = location?.state?.from || '/feed'
 
   const images = useMemo(
     () => [
@@ -59,8 +61,8 @@ export default function PinterArtAuth() {
       } else {
         await signUp(data)
       }
-      // Redirect otomatis ke halaman Feed setelah sukses
-      navigate('/feed')
+      // Redirect ke halaman asal (jika ada), fallback ke Feed
+      navigate(fromPath, { replace: true })
     } catch (e) {
       // Error handled in context
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom' // Tambah useNavigate
+import { Link, useNavigate, useLocation } from 'react-router-dom' // Tambah useNavigate
 import { ArrowLeft, Settings, Share2, Lock, BarChart3, LogOut } from 'lucide-react' // Tambah icon LogOut
 import { useArt } from '../context/ArtContext'
 import { useAuth } from '../context/AuthContext' // Import AuthContext
@@ -9,7 +9,8 @@ export default function PinterArtProfile() {
   
   // Ambil user dan fungsi logout dari AuthContext
     const { user, logout, updateProfile } = useAuth ? useAuth() : { user: null, logout: () => {}, updateProfile: undefined }
-  const navigate = useNavigate()
+    const navigate = useNavigate()
+    const location = useLocation()
 
   const [activeTab, setActiveTab] = useState('created')
     const [isEditing, setIsEditing] = useState(false)
@@ -22,9 +23,9 @@ export default function PinterArtProfile() {
     // Guard: redirect jika belum login
     useEffect(() => {
         if (!user) {
-            navigate('/auth', { replace: true })
+            navigate('/auth', { replace: true, state: { from: location.pathname } })
         }
-    }, [user, navigate])
+    }, [user, navigate, location])
 
     const createdPins = pins.filter(pin => pin.artist === 'Saya (Artist)' || pin.artist === 'Saya Sendiri')
   const savedPins = pins.filter(pin => pin.isSaved)
