@@ -19,6 +19,16 @@ export default function PinterArtHome() {
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const notifRef = useRef(null) // Untuk mendeteksi klik di luar dropdown
 
+    // State Baru: Chat
+    const [isChatOpen, setIsChatOpen] = useState(false)
+    const chatRef = useRef(null)
+    const [chatText, setChatText] = useState('')
+    const [chatMessages, setChatMessages] = useState([
+        { id: 1, name: 'Sarah Arts', text: 'Halo! Karyamu keren banget 👀', time: '1m' },
+        { id: 2, name: 'Budi Design', text: 'Ada collab minggu depan?', time: '10m' },
+        { id: 3, name: 'System', text: 'Ingat untuk patuhi pedoman komunitas.', time: '1h' }
+    ])
+
   // Mock Data Notifikasi (Biar terlihat ramai)
   const notifications = [
       { id: 1, type: 'money', text: 'Seseorang berlangganan karyamu!', time: '2m', amount: '+Rp 50.000', read: false },
@@ -40,12 +50,16 @@ export default function PinterArtHome() {
         if (e.key === 'Escape') {
             setSelectedPinId(null)
             setIsNotifOpen(false)
+            setIsChatOpen(false)
         }
     }
     // Tutup notifikasi jika klik di luar area
     const handleClickOutside = (e) => {
         if (notifRef.current && !notifRef.current.contains(e.target)) {
             setIsNotifOpen(false)
+        }
+        if (chatRef.current && !chatRef.current.contains(e.target)) {
+            setIsChatOpen(false)
         }
     }
 
@@ -62,6 +76,14 @@ export default function PinterArtHome() {
     addComment(selectedPinId, commentText)
     setCommentText('') 
   }
+
+    const handleSendChat = () => {
+        const text = chatText.trim()
+        if (!text) return
+        const newMsg = { id: Date.now(), name: 'Anda', text, time: 'now' }
+        setChatMessages((prev) => [...prev, newMsg])
+        setChatText('')
+    }
 
   return (
     <div className={`min-h-screen bg-white text-gray-900 ${selectedPinId ? 'overflow-hidden h-screen' : ''}`}>
@@ -140,7 +162,12 @@ export default function PinterArtHome() {
                 )}
             </div>
 
-            <button className="rounded-full p-2 hover:bg-gray-100 text-gray-600"><MessageCircle className="h-5 w-5" /></button>
+                        <button 
+                            onClick={() => setIsChatOpen((v) => !v)}
+                            className={`rounded-full p-2 transition ${isChatOpen ? 'bg-black text-white' : 'hover:bg-gray-100 text-gray-600'}`}
+                        >
+                            <MessageCircle className="h-5 w-5" />
+                        </button>
             
             <Link to="/profile" className="rounded-full p-2 hover:bg-gray-100 text-gray-900">
                 <User className="h-5 w-5" />
@@ -169,6 +196,54 @@ export default function PinterArtHome() {
             </div>
         )}
       </div>
+
+            {/* --- CHAT DRAWER --- */}
+            {isChatOpen && (
+                <div className="fixed right-4 top-20 z-50" ref={chatRef}>
+                    <div className="w-[360px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-bold">Pesan Komunitas</p>
+                                <p className="text-xs text-gray-500">Terhubung dengan para artist</p>
+                            </div>
+                            <button onClick={() => setIsChatOpen(false)} className="p-2 rounded-full hover:bg-gray-100">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="h-80 overflow-y-auto p-4 space-y-3">
+                            {chatMessages.map((m) => (
+                                <div key={m.id} className="flex items-start gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${m.name}`} alt="avatar" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs text-gray-500 mb-0.5">{m.name} · {m.time}</p>
+                                        <div className={`inline-block px-3 py-2 rounded-2xl text-sm ${m.name === 'Anda' ? 'bg-black text-white' : 'bg-gray-100'}`}>{m.text}</div>
+                                    </div>
+                                </div>
+                            ))}
+                            {chatMessages.length === 0 && (
+                                <p className="text-xs text-gray-400">Belum ada pesan.</p>
+                            )}
+                        </div>
+                        <div className="p-3 border-t border-gray-100 bg-white">
+                            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
+                                <input 
+                                    type="text" 
+                                    value={chatText}
+                                    onChange={(e) => setChatText(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                                    placeholder="Tulis pesan..." 
+                                    className="bg-transparent flex-1 outline-none text-sm" 
+                                />
+                                <button onClick={handleSendChat} className="p-1 rounded-full hover:bg-gray-200">
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
       {/* --- DETAIL MODAL --- */}
       {selectedPin && (
