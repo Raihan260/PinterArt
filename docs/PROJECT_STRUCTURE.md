@@ -104,18 +104,22 @@ Website PinterArt adalah platform berbasis web untuk menampilkan, membuat, dan m
 - **Beranda (`PinterArtHome.jsx`):**
    - Menampilkan ringkasan platform dan highlight beberapa karya terbaru/populer.
    - Akses cepat ke galeri dan tombol untuk login/registrasi.
+   - Termasuk fitur chat drawer sederhana (ikon chat di navbar) untuk pesan komunitas.
 - **Dashboard (`PinterArtDashboard.jsx`):**
    - Tampilan ringkas aktivitas pengguna setelah login.
-   - Menampilkan statistik sederhana (jumlah karya, terakhir diubah, dsb.).
+   - Menampilkan statistik dinamis (pendapatan, subscriber, views) dengan filter waktu Hari ini/7 Hari/30 Hari.
+   - Tabel "Karya Terpopuler" diisi dari data `pins` di `ArtContext`.
 - **Buat Karya (`PinterArtCreate.jsx`):**
    - Form untuk membuat karya baru: judul, deskripsi, kategori/tag, gambar/URL.
    - Validasi dasar dan umpan balik (success/error).
 - **Profil (`PinterArtProfile.jsx`):**
    - Informasi pengguna: nama, avatar (opsional), bio singkat.
    - Daftar karya milik pengguna dengan aksi edit/hapus.
+   - Edit profil inline (username, bio, avatar URL) tersinkron ke `AuthContext`.
 - **Autentikasi (`PinterArtAuth.jsx`):**
    - Form login dan registrasi.
    - Terintegrasi dengan `AuthContext` untuk state dan aksi.
+   - Mendukung "redirect back" ke halaman asal setelah login (via `location.state.from`).
 
 Catatan: Jika routing digunakan, halaman-halamaan di atas akan dihubungkan via router (mis. `react-router-dom`). Jika belum, navigasi sederhana melalui kondisi di `App.jsx` tetap memungkinkan.
 
@@ -151,10 +155,11 @@ Model data ini dikelola oleh `ArtContext` untuk operasi CRUD, dan `AuthContext` 
 ### Autentikasi & Otorisasi
 - **State Auth:**
    - `AuthContext` menyimpan `user` (objek), `isAuthenticated` (boolean), dan fungsi `login`, `logout`, `register`.
+   - Menyediakan `updateProfile(data)` untuk memperbarui `username`, `bio`, `avatarUrl` serta persist ke `localStorage`.
 - **Proteksi Halaman:**
-   - Halaman seperti Dashboard/Buat Karya/Profil memerlukan login. Jika belum login, alihkan ke Autentikasi.
+   - Halaman seperti Dashboard/Buat Karya/Profil memerlukan login. Jika belum login, alihkan ke Autentikasi dengan menyertakan `state.from` agar setelah login diarahkan kembali ke halaman asal.
 - **Token/Session (Mock):**
-   - Pada tahap awal, autentikasi dapat dimock (state lokal). Di tahap lanjut, integrasi API dapat menambahkan token JWT dan penyimpanan ke `localStorage`.
+   - Pada tahap awal, autentikasi dimock dengan state lokal, serta persist user ke `localStorage` agar profil tersimpan setelah reload. Di tahap lanjut, integrasi API dapat menambahkan token JWT.
 
 ### UI & Styling
 - **Tailwind CSS:**
@@ -165,7 +170,7 @@ Model data ini dikelola oleh `ArtContext` untuk operasi CRUD, dan `AuthContext` 
 
 ### Integrasi API & Persistensi (Tahap Lanjut)
 - **Mock Data (awal):**
-   - Data karya dan pengguna disimpan di state Context (in-memory) untuk mempercepat pengembangan UI.
+   - Data karya dan pengguna disimpan di state Context (in-memory). User dipersist ke `localStorage`; metrik dashboard masih berbasis derivasi sederhana dari `pins`.
 - **API Sungguhan:**
    - Di tahap lanjut, tambahkan layanan API (REST/GraphQL). `ArtContext`/`AuthContext` akan memanggil API untuk operasi CRUD dan auth.
 - **Upload Gambar:**
