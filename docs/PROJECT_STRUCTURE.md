@@ -85,3 +85,107 @@ Contoh umum (cek berkas aktual):
 - Simpan gambar publik di `public/images/`.
 
 Jika butuh detail lebih lanjut (mis. contoh penggunaan Context atau struktur router), beri tahu agar saya tambahkan contoh kode singkat.
+
+## Deskripsi Website yang Akan Dibuat
+Website PinterArt adalah platform berbasis web untuk menampilkan, membuat, dan mengelola karya seni digital oleh komunitas pengguna. Aplikasi ini fokus pada pengalaman sederhana: pengguna dapat melihat galeri karya, masuk/daftar akun, membuat karya baru, mengedit/menghapus karya miliknya, serta mengelola profil.
+
+### Tujuan Utama
+- Menyediakan galeri karya seni (publik) yang mudah dijelajahi.
+- Memfasilitasi proses autentikasi pengguna (login/registrasi) secara sederhana.
+- Memungkinkan pengguna membuat, mengedit, dan menghapus karya (CRUD) milik sendiri.
+- Menyajikan profil pengguna dengan daftar karya terkait.
+
+### Peran Pengguna (User Roles)
+- **Pengunjung (Guest):** Dapat melihat beranda dan galeri (karya publik), namun tidak bisa membuat atau mengubah karya.
+- **Pengguna Terautentikasi (User):** Setelah login, dapat membuat karya baru, mengedit/menghapus karya miliknya, serta mengelola profil.
+- **Admin (opsional, future):** Memiliki kontrol moderasi, dapat menghapus karya yang melanggar ketentuan. Peran ini bisa ditambahkan kemudian jika diperlukan.
+
+### Halaman & Navigasi Utama
+- **Beranda (`PinterArtHome.jsx`):**
+   - Menampilkan ringkasan platform dan highlight beberapa karya terbaru/populer.
+   - Akses cepat ke galeri dan tombol untuk login/registrasi.
+- **Dashboard (`PinterArtDashboard.jsx`):**
+   - Tampilan ringkas aktivitas pengguna setelah login.
+   - Menampilkan statistik sederhana (jumlah karya, terakhir diubah, dsb.).
+- **Buat Karya (`PinterArtCreate.jsx`):**
+   - Form untuk membuat karya baru: judul, deskripsi, kategori/tag, gambar/URL.
+   - Validasi dasar dan umpan balik (success/error).
+- **Profil (`PinterArtProfile.jsx`):**
+   - Informasi pengguna: nama, avatar (opsional), bio singkat.
+   - Daftar karya milik pengguna dengan aksi edit/hapus.
+- **Autentikasi (`PinterArtAuth.jsx`):**
+   - Form login dan registrasi.
+   - Terintegrasi dengan `AuthContext` untuk state dan aksi.
+
+Catatan: Jika routing digunakan, halaman-halamaan di atas akan dihubungkan via router (mis. `react-router-dom`). Jika belum, navigasi sederhana melalui kondisi di `App.jsx` tetap memungkinkan.
+
+### Model Data (Sederhana)
+- **User**
+   - `id`: string/number
+   - `name`: string
+   - `email`: string
+   - `avatarUrl`: string (opsional)
+   - `bio`: string (opsional)
+- **Art (Karya)**
+   - `id`: string/number
+   - `title`: string
+   - `description`: string
+   - `imageUrl`: string (atau file upload, disederhanakan menjadi URL)
+   - `tags`: string[] (opsional)
+   - `authorId`: mengacu ke `User.id`
+   - `createdAt` / `updatedAt`: tanggal/waktu
+
+Model data ini dikelola oleh `ArtContext` untuk operasi CRUD, dan `AuthContext` untuk informasi pengguna.
+
+### Alur Fitur Inti
+- **Lihat Galeri:**
+   - Pengunjung membuka Beranda → melihat daftar karya publik dari `ArtContext`.
+- **Registrasi & Login:**
+   - Pengunjung membuka Autentikasi → submit form → `AuthContext.login/register` mengubah state user.
+   - Setelah login, navigasi menuju Dashboard.
+- **Buat Karya:**
+   - Dari Dashboard/Profil → buka Buat Karya → isi form → panggil `ArtContext.create` → karya baru muncul di galeri dan profil.
+- **Edit/Hapus Karya:**
+   - Di Profil, pengguna memilih karya milik sendiri → `ArtContext.update/delete` untuk perubahan.
+
+### Autentikasi & Otorisasi
+- **State Auth:**
+   - `AuthContext` menyimpan `user` (objek), `isAuthenticated` (boolean), dan fungsi `login`, `logout`, `register`.
+- **Proteksi Halaman:**
+   - Halaman seperti Dashboard/Buat Karya/Profil memerlukan login. Jika belum login, alihkan ke Autentikasi.
+- **Token/Session (Mock):**
+   - Pada tahap awal, autentikasi dapat dimock (state lokal). Di tahap lanjut, integrasi API dapat menambahkan token JWT dan penyimpanan ke `localStorage`.
+
+### UI & Styling
+- **Tailwind CSS:**
+   - Gunakan utility classes untuk layout responsive, spacing, warna, dan tipografi.
+   - Komponen mengikuti gaya konsisten: kartu karya, grid galeri, form yang jelas.
+- **Aksesibilitas:**
+   - Label form, aria-attributes dasar, kontras warna memadai.
+
+### Integrasi API & Persistensi (Tahap Lanjut)
+- **Mock Data (awal):**
+   - Data karya dan pengguna disimpan di state Context (in-memory) untuk mempercepat pengembangan UI.
+- **API Sungguhan:**
+   - Di tahap lanjut, tambahkan layanan API (REST/GraphQL). `ArtContext`/`AuthContext` akan memanggil API untuk operasi CRUD dan auth.
+- **Upload Gambar:**
+   - Mulai dari URL gambar; nanti bisa ditambah upload ke storage (mis. Cloud Storage) dan menyimpan URL hasil unggahan.
+
+### Kebutuhan Non-Fungsional
+- **Kinerja:**
+   - Vite untuk dev cepat, build produksi dioptimalkan.
+- **Keandalan:**
+   - Penanganan error di form dan operasi CRUD.
+- **Keamanan (dasar):**
+   - Validasi input, proteksi halaman, dan sanitasi deskripsi.
+- **Skalabilitas:**
+   - Pemisahan Context dan komponen agar mudah diperluas.
+
+### Roadmap Pengembangan (Iteratif)
+1. Rangka UI dasar dan navigasi antar halaman.
+2. Implementasi `AuthContext` (mock) dan proteksi halaman.
+3. Implementasi `ArtContext` dengan CRUD in-memory.
+4. Styling konsisten dengan Tailwind; komponen kartu galeri.
+5. Integrasi router (bila belum) dan deep-linking halaman.
+6. Integrasi API backend (opsional tahap lanjut) untuk data nyata.
+7. Fitur tambahan: pencarian/filter karya, like/favorite, komentar, dan peran admin.
