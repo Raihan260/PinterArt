@@ -7,6 +7,8 @@ export default function PinterArtHome() {
 
   const [selectedPinId, setSelectedPinId] = useState(null)
   const [commentText, setCommentText] = useState('')
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [toast, setToast] = useState(null) // { message, type }
 
   const selectedPin = pins.find(p => p.id === selectedPinId)
 
@@ -23,6 +25,32 @@ export default function PinterArtHome() {
     if (!commentText.trim()) return
     addComment(selectedPinId, commentText)
     setCommentText('')
+    setToast({ message: 'Komentar terkirim', type: 'success' })
+  }
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 2000)
+  }
+
+  const handleDownloadHD = () => {
+    if (!selectedPin) return
+    if (selectedPin.isPremium && !selectedPin.isUnlocked) {
+      showToast('Buka langganan untuk mengunduh HD', 'warning')
+      return
+    }
+    const url = selectedPin.downloadUrl || selectedPin.src
+    try {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = selectedPin.title || 'pinterart'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      showToast('Mengunduh versi HD...', 'success')
+    } catch (_) {
+      showToast('Gagal mengunduh', 'error')
+    }
   }
 
   return (
@@ -39,6 +67,10 @@ export default function PinterArtHome() {
               onSave={(e) => {
                 e.stopPropagation()
                 toggleSave(pin.id)
+              }}
+              onLike={(e) => {
+                e.stopPropagation()
+                toggleLike(pin.id)
               }}
             />
           ))}
@@ -89,13 +121,63 @@ export default function PinterArtHome() {
             {/* Detail */}
             <div className="w-full md:w-1/2 flex flex-col h-full bg-white">
               <div className="p-6 flex justify-between items-center">
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
+                <div className="flex gap-2 relative">
+                  <button
+                    onClick={() => {
+                      const shareData = {
+                        title: selectedPin.title,
+                        text: `Lihat karya ${selectedPin.artist}`,
+                        url: window.location.href,
+                      }
+                      if (navigator.share) {
+                        navigator.share(shareData).catch(() => {})
+                      } else {
+                        navigator.clipboard?.writeText(shareData.url)
+                        showToast('Link disalin ke clipboard', 'success')
+                      }
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
                     <Share2 className="w-5 h-5" />
                   </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
+                  <button
+                    onClick={() => setMoreOpen(v => !v)}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
+                  {moreOpen && (
+                    <div className="absolute right-0 top-10 w-44 bg-white border border-gray-200 rounded-xl shadow-lg py-2 z-10">
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                        onClick={() => {
+                          setMoreOpen(false)
+                          handleDownloadHD()
+                        }}
+                      >
+                        Download HD
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                        onClick={() => {
+                          setMoreOpen(false)
+                          navigator.clipboard?.writeText(window.location.href)
+                          showToast('Link disalin ke clipboard', 'success')
+                        }}
+                      >
+                        Salin Link
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                        onClick={() => {
+                          setMoreOpen(false)
+                          showToast('Terima kasih, laporan Anda kami catat', 'info')
+                        }}
+                      >
+                        Laporkan
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3">
@@ -127,6 +209,29 @@ export default function PinterArtHome() {
 
               <div className="flex-1 overflow-y-auto px-6">
                 <h1 className="text-3xl font-bold mb-2">{selectedPin.title}</h1>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-200" />
+                    <span className="text-sm text-gray-700">{selectedPin.artist}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleFollow(selectedPin.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                        selectedPin.isFollowing ? 'bg-black text-white' : 'bg-gray-200'
+                      }`}
+                    >
+                      {selectedPin.isFollowing ? 'Mengikuti' : 'Ikuti'}
+                    </button>
+                    <button
+                      onClick={() => toggleLike(selectedPin.id)}
+                      className={`p-2 rounded-full border ${selectedPin.isLiked ? 'bg-red-100 border-red-300' : 'bg-white border-gray-200'} hover:bg-red-50`}
+                      title={selectedPin.isLiked ? 'Batalkan Suka' : 'Suka'}
+                    >
+                      <Heart className={`w-5 h-5 ${selectedPin.isLiked ? 'text-red-600' : 'text-gray-600'}`} />
+                    </button>
+                  </div>
+                </div>
                 <p className="text-gray-600 mb-6 text-sm">
                   {selectedPin.description || 'Tidak ada deskripsi.'}
                 </p>
@@ -166,16 +271,17 @@ export default function PinterArtHome() {
           </div>
         </div>
       )}
+      <Toast toast={toast} />
     </div>
   )
 }
 
-function PinCard({ pin, onClick, onSave }) {
+function PinCard({ pin, onClick, onSave, onLike }) {
   const isLocked = pin.isPremium && !pin.isUnlocked
 
   return (
     <div onClick={onClick} className="cursor-pointer break-inside-avoid">
-      <div className="relative rounded-2xl overflow-hidden bg-gray-100">
+      <div className="relative rounded-2xl overflow-hidden bg-gray-100 group">
         <img
           src={pin.src}
           alt={pin.title}
@@ -184,15 +290,39 @@ function PinCard({ pin, onClick, onSave }) {
           }`}
         />
         {!isLocked && (
-          <button
-            onClick={onSave}
-            className="absolute top-3 right-3 px-3 py-1.5 text-xs bg-red-600 text-white rounded-full"
-          >
-            Simpan
-          </button>
+          <div className="absolute inset-x-0 top-0 p-3 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={onSave}
+              className="px-3 py-1.5 text-xs bg-black text-white rounded-full shadow"
+            >
+              {pin.isSaved ? 'Disimpan' : 'Simpan'}
+            </button>
+            <button
+              onClick={onLike}
+              className={`p-2 rounded-full bg-white/90 shadow ${pin.isLiked ? 'text-red-600' : 'text-gray-700'}`}
+              title={pin.isLiked ? 'Batalkan Suka' : 'Suka'}
+            >
+              <Heart className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {typeof pin.likeCount === 'number' && !isLocked && (
+          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full text-xs bg-white/90 shadow flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-red-600" />
+            <span className="text-gray-700">{pin.likeCount}</span>
+          </div>
         )}
       </div>
       <p className="mt-2 font-bold text-sm">{pin.title}</p>
     </div>
+  )
+}
+
+// Lightweight toast
+function Toast({ toast }) {
+  if (!toast) return null
+  const color = toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : toast.type === 'warning' ? 'bg-yellow-600' : 'bg-gray-800'
+  return (
+    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 ${color} text-white px-4 py-2 rounded-full shadow-lg z-[60]`}>{toast.message}</div>
   )
 }
