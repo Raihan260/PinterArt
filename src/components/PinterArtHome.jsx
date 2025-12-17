@@ -9,6 +9,7 @@ export default function PinterArtHome() {
   const [commentText, setCommentText] = useState('')
   const [moreOpen, setMoreOpen] = useState(false)
   const [toast, setToast] = useState(null) // { message, type }
+  const [subscribeOpen, setSubscribeOpen] = useState(false)
 
   const selectedPin = pins.find(p => p.id === selectedPinId)
 
@@ -193,9 +194,9 @@ export default function PinterArtHome() {
                   <button
                     onClick={() => {
                       if (selectedPin.isPremium && !selectedPin.isUnlocked) {
-                        if (confirm(`Langganan ke ${selectedPin.artist} seharga Rp 50.000?`)) {
-                          unlockPin(selectedPin.id)
-                        }
+                        setSubscribeOpen(true)
+                      } else {
+                        handleDownloadHD()
                       }
                     }}
                     className="px-5 py-3 rounded-full font-bold text-white bg-black"
@@ -271,6 +272,17 @@ export default function PinterArtHome() {
           </div>
         </div>
       )}
+      {subscribeOpen && selectedPin && (
+        <SubscribeModal
+          pin={selectedPin}
+          onClose={() => setSubscribeOpen(false)}
+          onConfirm={() => {
+            unlockPin(selectedPin.id)
+            setSubscribeOpen(false)
+            showToast('Berlangganan berhasil! Konten terbuka.', 'success')
+          }}
+        />
+      )}
       <Toast toast={toast} />
     </div>
   )
@@ -289,6 +301,16 @@ function PinCard({ pin, onClick, onSave, onLike }) {
             isLocked ? 'blur-md brightness-75' : ''
           }`}
         />
+        {isLocked && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center text-white">
+              <div className="bg-black/40 rounded-full p-3 mb-2">
+                <Lock className="w-6 h-6" />
+              </div>
+              <span className="text-xs font-semibold bg-black/30 px-2 py-1 rounded-full">Konten Premium</span>
+            </div>
+          </div>
+        )}
         {!isLocked && (
           <div className="absolute inset-x-0 top-0 p-3 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -314,6 +336,46 @@ function PinCard({ pin, onClick, onSave, onLike }) {
         )}
       </div>
       <p className="mt-2 font-bold text-sm">{pin.title}</p>
+    </div>
+  )
+}
+
+function SubscribeModal({ pin, onClose, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-3">
+            <div className="bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center">
+              <Lock className="w-5 h-5 text-gray-700" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">Langganan Konten Eksklusif</h2>
+              <p className="text-sm text-gray-600">Artist: {pin.artist}</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-50 rounded-2xl p-4">
+            <p className="text-sm text-gray-700">Buka akses penuh untuk karya ini dan konten premium dari artist.</p>
+            <ul className="mt-3 text-sm text-gray-700 list-disc pl-4 space-y-1">
+              <li>Gambar kualitas HD tanpa blur</li>
+              <li>Akses komentar premium</li>
+              <li>Update eksklusif dari artist</li>
+            </ul>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Biaya langganan</p>
+              <p className="text-xl font-bold">Rp 50.000</p>
+            </div>
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded-full bg-gray-200 text-gray-900 font-semibold" onClick={onClose}>Batal</button>
+              <button className="px-4 py-2 rounded-full bg-black text-white font-bold" onClick={onConfirm}>Berlangganan</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
