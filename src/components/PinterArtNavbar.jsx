@@ -7,6 +7,7 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
 
   const isHome = pathname.startsWith('/main')
   const isCreate = pathname.startsWith('/create')
+  const isCommunity = pathname.startsWith('/community')
 
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -103,6 +104,14 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
             className={`${baseTab} ${isCreate ? activeTab : inactiveTab}`}
           >
             Buat
+          </Link>
+
+          {/* KOMUNITAS */}
+          <Link
+            to="/community"
+            className={`${baseTab} ${isCommunity ? activeTab : inactiveTab}`}
+          >
+            Komunitas
           </Link>
         </div>
 

@@ -5,6 +5,7 @@ import PinterArtHome from './components/PinterArtHome'
 import PinterArtCreate from './components/PinterArtCreate'
 import PinterArtProfile from './components/PinterArtProfile'
 import PinterArtDashboard from './components/PinterArtDashboard'
+import PinterArtCommunity from './components/PinterArtCommunity'
 
 import MainLayout from './layouts/MainLayout'
 
@@ -19,6 +20,7 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/main" element={<PinterArtHome />} />
           <Route path="/create" element={<PinterArtCreate />} />
+          <Route path="/community" element={<PinterArtCommunity />} />
           <Route path="/profile" element={<PinterArtProfile />} />
           <Route path="/dashboard" element={<PinterArtDashboard />} />
         </Route>
